@@ -1,0 +1,84 @@
+LIBRARY ieee;
+USE ieee.std_logic_1164.all;
+USE ieee.std_logic_arith.all;
+USE ieee.std_logic_unsigned.all;
+
+ENTITY stepper_motor IS
+PORT(
+    clk        : in  std_logic;
+    sw0        : in  std_logic; -- ON/OFF
+    sw1        : in  std_logic; -- Arah
+    sw2        : in  std_logic; -- Speed slow
+    sw3        : in  std_logic; -- Speed medium
+    sw4        : in  std_logic; -- Speed turbo
+    btn_pulse  : in  std_logic; -- Tombol pulse (momentary)
+    step_out   : out std_logic_vector(3 downto 0)
+);
+END stepper_motor;
+
+ARCHITECTURE behavior OF stepper_motor IS
+    SIGNAL scount    : std_logic_vector(23 downto 0) := (others => '0');
+    SIGNAL step_idx  : std_logic_vector(1 downto 0) := "00";
+    SIGNAL CA        : std_logic_vector(23 downto 0) := x"080000";
+    SIGNAL motor_run : std_logic := '0';
+BEGIN
+
+    -- Pemilihan kecepatan berdasarkan switch
+    process(sw2, sw3, sw4)
+    begin
+        if sw4 = '1' then
+            CA <= x"010000";
+        elsif sw3 = '1' then
+            CA <= x"030000";
+        elsif sw2 = '1' then
+            CA <= x"080000";
+        else
+            CA <= x"0F0000";
+        end if;
+    end process;
+
+    -- Deteksi pulse + SW0 untuk mulai motor
+    process(clk)
+    begin
+        if rising_edge(clk) then
+            -- Reset jika SW0 OFF
+            if sw0 = '0' then
+                motor_run <= '0';
+
+            -- Hanya mulai jika pulse ditekan dan SW0 ON
+            elsif sw0 = '1' and btn_pulse = '1' and motor_run = '0' then
+                motor_run <= '1'; -- aktifkan motor (satu kali saja)
+            end if;
+        end if;
+    end process;
+
+    -- Logic stepper berjalan hanya jika motor_run = '1'
+    process(clk)
+    begin
+        if rising_edge(clk) then
+            if motor_run = '1' then
+                if scount >= CA then
+                    scount <= (others => '0');
+
+                    if sw1 = '1' then
+                        step_idx <= step_idx + 1; -- CW
+                    else
+                        step_idx <= step_idx - 1; -- CCW
+                    end if;
+
+                else
+                    scount <= scount + 1;
+                end if;
+            end if;
+        end if;
+    end process;
+
+    -- Output stepper
+    with step_idx select
+        step_out <= "1001" when "00",
+                    "1010" when "01",
+                    "0110" when "10",
+                    "0101" when "11",
+                    "0000" when others;
+
+END behavior;

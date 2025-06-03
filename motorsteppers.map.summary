@@ -1,0 +1,10 @@
+Analysis & Synthesis Status : Successful - Tue Jun 03 16:53:48 2025
+Quartus II Version : 9.0 Build 235 06/17/2009 SP 2 SJ Web Edition
+Revision Name : motorsteppers
+Top-level Entity Name : stepper_motor
+Family : Cyclone
+Total logic elements : 35
+Total pins : 11
+Total virtual pins : 0
+Total memory bits : 0
+Total PLLs : 0
